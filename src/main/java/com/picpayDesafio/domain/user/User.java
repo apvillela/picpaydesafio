@@ -6,8 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import com.picpayDesafio.dtos.UserDTO;
 
 @Entity(name = "users")
 @Table(name = "users")
@@ -15,7 +17,7 @@ import java.math.BigDecimal;
 @Setter
 @AllArgsConstructor
 @EqualsAndHashCode
-
+@NoArgsConstructor
 
 public class User {
     @Id
@@ -39,5 +41,15 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private UserType userType;
+    
 
+    public User(UserDTO data){
+        this.firstName = data.firstName();
+        this.lastName = data.lastName();
+        this.documento = data.document();
+        this.email = data.email();
+        this.password = data.password();
+        this.balance = data.balance();
+        this.userType = data.userType();
+    }
 }

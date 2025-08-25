@@ -25,8 +25,10 @@ public class TransactionService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private NotificationService notificationService;
 
-    public void createTransaction(TransactionDTO transaction) throws Exception {
+    public Transaction createTransaction(TransactionDTO transaction) throws Exception {
         User sender = this.userService.findUserById(transaction.senderId());
         User receiver = this.userService.findUserById(transaction.receiverID());
 
@@ -35,7 +37,7 @@ public class TransactionService {
 
         boolean isAuthorized = this.authorizeTransaction(sender, transaction.value());
         if(!isAuthorized){
-            throw new Exception("Transação não autorizada")
+            throw new Exception("Transação não autorizada");
         }
 
         Transaction newTransaction = new Transaction();
@@ -50,6 +52,9 @@ public class TransactionService {
         this.repository.save(newTransaction);
         this.userService.saveUser(sender);
         this.userService.saveUser(receiver);
+        this.notificationService.sendNotification(sender, "Transação realizada com sucesso");
+        this.notificationService.sendNotification(receiver, "Transação recebida com sucesso");
+        return newTransaction;
 
     }
 
@@ -57,8 +62,16 @@ public class TransactionService {
     public boolean authorizeTransaction(User sender, BigDecimal value){
        ResponseEntity<Map> authorizationResponse = restTemplate.getForEntity("https://util.devi.tools/api/v2/authorize", Map.class);
 
-    if(authorizationResponse.getStatusCode() == HttpStatus.OK && authorizationResponse.getBody().get("message") == "true");
-    return true;
-    } else return false;
+    if(authorizationResponse.getStatusCode() == HttpStatus.OK) {
+        Map<String, Object> responseBody = authorizationResponse.getBody();
+        if(responseBody != null && responseBody.containsKey("data")) {
+            Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
+            if(data != null && data.containsKey("authorization")) {
+                return Boolean.TRUE.equals(data.get("authorization"));
+            }
+        }
+    }
+    return false;
+    }
 
 }
